@@ -87,3 +87,6 @@ type structure_item =
       - [let rec P1 = E1 and ... and Pn = En] when rec_flag is Recursive
     *)
 [@@deriving show { with_path = false }]
+
+type program = structure_item list
+[@@deriving show { with_path = false }]
