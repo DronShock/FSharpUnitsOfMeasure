@@ -2,6 +2,26 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+type rational_exp =
+  | Integer of int (** Integer exponent: [2] *)
+  | Rational of int * int (** Rational exponent: [3/2] *)
+  | Negate of rational_exp (** Negation of exponent: [-1], [-(1/2)] *)
+  | Paren of rational_exp (** Parentheses around exponent: [(5)], [(-2/3)] *)
+[@@deriving show { with_path = false }]
+
+type measure =
+  | Measure_ident of string (** Measure identificator: [<m>] *)
+  | Measure_prod of measure * measure (** Measure product: [<sec * h>], [<kg m>] *)
+  | Measure_div of measure * measure (** Measure division: [<m / sec>] *)
+  | Measure_pow of measure * rational_exp
+  (** Measure to the rational power: [<cm^3>] *)
+[@@deriving show { with_path = false }]
+
+type measure_val =
+  | Mval_int of int
+  | Mval_float of float
+[@@deriving show { with_path = false }]
+
 type constant =
   | Const_bool of bool (** Boolean constants [true] and [false] *)
   | Const_int of int (** Integer constants: [1] *)
@@ -10,26 +30,6 @@ type constant =
   | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3] *)
   | Const_measure of measure_val * measure
   (** Measure constants: [5.0<cm>], [3<kg>] *)
-[@@deriving show { with_path = false }]
-
-and measure_val =
-  | Mval_int of int
-  | Mval_float of float
-[@@deriving show { with_path = false }]
-
-and measure =
-  | Measure_ident of string (** Measure identificator: [<m>] *)
-  | Measure_prod of measure * measure (** Measure product: [<sec * h>], [<kg m>] *)
-  | Measure_div of measure * measure (** Measure division: [<m / sec>] *)
-  | Measure_pow of measure * rational_exp
-  (** Measure to the rational power: [<cm^3>] *)
-[@@deriving show { with_path = false }]
-
-and rational_exp =
-  | Integer of int (** Integer exponent: [2] *)
-  | Rational of int * int (** Rational exponent: [3/2] *)
-  | Negate of rational_exp (** Negation of exponent: [-1], [-(1/2)] *)
-  | Paren of rational_exp (** Parentheses around exponent: [(5)], [(-2/3)] *)
 [@@deriving show { with_path = false }]
 
 type pattern =
