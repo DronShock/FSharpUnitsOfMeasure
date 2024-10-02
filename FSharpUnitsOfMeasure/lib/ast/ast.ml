@@ -18,8 +18,8 @@ type measure =
 [@@deriving show { with_path = false }]
 
 type measure_val =
-  | Mval_int of int
-  | Mval_float of float
+  | Mval_int of int (** Integer numbers with units of measure *)
+  | Mval_float of float (** Real numbers with units of measure *)
 [@@deriving show { with_path = false }]
 
 type constant =
