@@ -46,3 +46,11 @@ let keywords = function
   | "measure" -> true
   | _ -> false
 ;;
+
+let take_empty = take_while empty_space
+let take_empty1 = take_while1 empty_space
+let token s = take_empty *> s
+let token1 s = take_empty1 *> s
+let stoken s = take_empty *> string s
+let stoken1 s = take_empty1 *> string s
+let brackets p = stoken "(" *> p <* stoken ")"
