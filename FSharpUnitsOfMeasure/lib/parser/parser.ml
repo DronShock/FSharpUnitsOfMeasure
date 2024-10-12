@@ -86,3 +86,14 @@ let parse_id =
 let parse_pconst = parse_types >>| fun x -> pconst x
 let parse_pvar = parse_id >>| fun x -> pident x
 let parse_pwild = stoken "_" *> return pwild
+
+let eifelse i t e = Expr_ifthenelse (i, t, e)
+let elet is_rec name body = Expr_let (is_rec, name, body)
+let etuple z = Expr_tuple z
+let efun id body = Expr_fun (id, body)
+let eapp f a = Expr_apply (f, a)
+let eident x = Expr_ident x
+let ematch c pl = Expr_match (c, pl)
+
+let parse_eident = parse_id >>| eident
+let parse_econst = parse_types >>| fun x -> Expr_const x
