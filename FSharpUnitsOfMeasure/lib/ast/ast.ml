@@ -2,6 +2,22 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+type binary_op =
+  | Add (** 1 + 2 *)
+  | Sub (** 1 - 2 *)
+  | Mul (** * *)
+  | Div (** / *)
+  | Mod (** % *)
+  | And (** && *)
+  | Or (** || *)
+  | Eq (** = *)
+  | Neq (** <> *)
+  | Less (** < *)
+  | Gre (** > *)
+  | Leq (** <= *)
+  | Greq (** >= *)
+[@@deriving eq, show { with_path = false }]
+
 type rational_exp =
   | Integer of int (** Integer exponent: [2] *)
   | Rational of int * int (** Rational exponent: [3/2] *)
