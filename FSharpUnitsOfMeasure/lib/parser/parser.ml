@@ -97,3 +97,38 @@ let ematch c pl = Expr_match (c, pl)
 
 let parse_eident = parse_id >>| eident
 let parse_econst = parse_types >>| fun x -> Expr_const x
+
+let ebinop op e1 e2 = eapp op (eapp e1 e2)
+let ediv = ebinop @@ Expr_binaryop Div
+let emul = ebinop @@ Expr_binaryop Mul
+let eadd = ebinop @@ Expr_binaryop Add
+let esub = ebinop @@ Expr_binaryop Sub
+let eless = ebinop @@ Expr_binaryop Less
+let eleq = ebinop @@ Expr_binaryop Leq
+let egre = ebinop @@ Expr_binaryop Gre
+let egreq = ebinop @@ Expr_binaryop Greq
+let emod = ebinop @@ Expr_binaryop Mod
+let eand = ebinop @@ Expr_binaryop And
+let eor = ebinop @@ Expr_binaryop Or
+let eeq = ebinop @@ Expr_binaryop Eq
+let eneq = ebinop @@ Expr_binaryop Neq
+
+let parse_binop =
+  take_empty
+  *> choice
+       [ string "=" *> return eeq
+       ; string "<>" *> return eneq
+       ; string "&&" *> return eand
+       ; string "||" *> return eor
+       ; string "*" *> return emul
+       ; string "/" *> return ediv
+       ; string "%" *> return emod
+       ; string "+" *> return eadd
+       ; string "-" *> return esub
+       ; string ">=" *> return egreq
+       ; string ">" *> return egre
+       ; string "<=" *> return eleq
+       ; string "<" *> return eless
+       ]
+  <* take_empty
+;;
