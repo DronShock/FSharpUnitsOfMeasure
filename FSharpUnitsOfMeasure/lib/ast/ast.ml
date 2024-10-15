@@ -2,22 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-type binary_op =
-  | Add (** [1 + 2] *)
-  | Sub (** [1 - 2] *)
-  | Mul (** [*] *)
-  | Div (** [/] *)
-  | Mod (** [%] *)
-  | And (** [&&] *)
-  | Or (** [||] *)
-  | Eq (** [=] *)
-  | Neq (** [<>] *)
-  | Less (** [<] *)
-  | Gre (** [>] *)
-  | Leq (** [<=] *)
-  | Greq (** [>=] *)
-[@@deriving eq, show { with_path = false }]
-
 type rational_exp =
   | Integer of int (** Integer exponent: [2] *)
   | Rational of int * int (** Rational exponent: [3/2] *)
@@ -70,7 +54,6 @@ and expression =
   | Expr_const of constant
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
   | Expr_ident of string (** Identificator name expressions: [x] *)
-  | Expr_binaryop of binary_op (** Binary operation: [+], [*], [=] *)
   | Expr_tuple of expression list
   (** Tuple expressions: [(E1, ..., En)]
       Invariant: [n >= 2] *)
