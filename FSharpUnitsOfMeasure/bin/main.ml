@@ -8,21 +8,22 @@ open Ast
 
 let () =
   let factorial_ast =
-    [ Str_value
+    [ Str_item_def
         ( Recursive
         , [ Binding
               ( Pattern_ident "factorial"
               , Expr_ifthenelse
                   ( Expr_apply
-                      ( Expr_apply (Expr_ident "<=", Expr_const (Const_int 1))
-                      , Expr_ident "n" )
+                      ( Expr_apply (Expr_ident_or_op "<=", Expr_const (Const_int 1))
+                      , Expr_ident_or_op "n" )
                   , Expr_const (Const_int 1)
                   , Some
                       (Expr_apply
                          ( Expr_apply
-                             ( Expr_ident "*"
-                             , Expr_apply (Expr_ident "factorial", Expr_ident "n-1") )
-                         , Expr_ident "n" )) ) )
+                             ( Expr_ident_or_op "*"
+                             , Expr_apply
+                                 (Expr_ident_or_op "factorial", Expr_ident_or_op "n-1") )
+                         , Expr_ident_or_op "n" )) ) )
           ] )
     ]
   in
