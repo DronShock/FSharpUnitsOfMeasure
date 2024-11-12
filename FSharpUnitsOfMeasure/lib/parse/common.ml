@@ -7,7 +7,6 @@
 
 open Base
 open Angstrom
-open Ast
 
 (* F# compiler forbids tabs by default *)
 let is_whitespace = function
@@ -61,48 +60,41 @@ let parse_ident =
   else return ident
 ;;
 
-let parse_const_int =
+let parse_char = char '\'' *> any_char <* char '\''
+let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
+let parse_bool = string "true" <|> string "false" >>| Bool.of_string
+
+let parse_int =
   let* int = take_while1 Char.is_digit >>| Int.of_string in
-  return (Const_int int)
+  let* next_char = peek_char in
+  match next_char with
+  | Some x when Char.equal x '.' -> fail "Cannot parse int, met float"
+  | _ -> return int
 ;;
 
-let parse_const_char =
-  let* char = char '\'' *> any_char <* char '\'' in
-  return (Const_char char)
-;;
-
-let parse_const_string =
-  let* str = char '"' *> take_till (Char.equal '"') <* char '"' in
-  return (Const_string str)
-;;
-
-let parse_const_bool =
-  let* bool = string "true" <|> string "false" >>| Bool.of_string in
-  return (Const_bool bool)
-;;
-
-(* Float parsing functions should probably be inside one big function *)
-(* Parse the float in form digit+ . digit* [f|F] *)
-let parse_const_float_sim =
+(* Floats can be in following forms:
+   [0-9]+ . [0-9]* [f|F]
+   [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
+let parse_float =
   let* int_part = take_while1 Char.is_digit in
-  let* dot = string "." in
-  let* fract_part = take_while Char.is_digit in
-  let* f = string "f" <|> string "F" <|> string "" in
-  let float = Float.of_string (int_part ^ dot ^ fract_part ^ f) in
-  return (Const_float float)
-;;
-
-(* Parse the float in form digit+ (. digit* )? (e|E) (+|-)? digit+ [f|F]
-   Not yet implemented *)
-
-let parse_const_float = parse_const_float_sim
-
-let parse_const =
-  choice
-    [ parse_const_int
-    ; parse_const_char
-    ; parse_const_string
-    ; parse_const_bool
-    ; parse_const_float
-    ]
+  let* dot = option "" (string ".") in
+  let* fract_part =
+    match dot with
+    | "." -> take_while Char.is_digit
+    | _ -> return ""
+  in
+  let* e = option "" (string "e" <|> string "E") in
+  let* exp_sign =
+    match e with
+    | "e" | "E" -> option "" (string "+" <|> string "-")
+    | _ -> return ""
+  in
+  let* exp =
+    match e with
+    | "e" | "E" -> take_while1 Char.is_digit
+    | _ -> return ""
+  in
+  let* _ = option "" (string "f" <|> string "F") in
+  let float = Float.of_string (int_part ^ dot ^ fract_part ^ e ^ exp_sign ^ exp) in
+  return float
 ;;
