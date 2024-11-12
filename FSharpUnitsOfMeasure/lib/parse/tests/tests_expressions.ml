@@ -126,8 +126,6 @@ let%expect_test "parse float with rational part, (e|E) but without exponent shou
   [%expect {| : no more choices  |}]
 ;;
 
-(* Need to try to test measures *)
-
 (************************** If then else **************************)
 
 let%expect_test "parse ite with else branch" =
@@ -244,6 +242,40 @@ let%expect_test "parse a+b*c" =
       (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
          (Expr_apply (
             (Expr_apply ((Expr_ident_or_op "*"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
+;;
+
+let%expect_test "parse a <= b <= c" =
+  pp pp_expression parse_expr {| a <= b <= c |};
+  [%expect {|
+      (Expr_apply (
+         (Expr_apply ((Expr_ident_or_op "<="),
+            (Expr_apply (
+               (Expr_apply ((Expr_ident_or_op "<="), (Expr_ident_or_op "a"))),
+               (Expr_ident_or_op "b")))
+            )),
+         (Expr_ident_or_op "c"))) |}]
+;;
+
+let%expect_test "parse a || b || c" =
+  pp pp_expression parse_expr {| a || b || c |};
+  [%expect
+    {|
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
+;;
+
+let%expect_test "parse a && b && c" =
+  pp pp_expression parse_expr {| a && b && c |};
+  [%expect
+    {|
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "b"))),
             (Expr_ident_or_op "c")))
          )) |}]
 ;;
