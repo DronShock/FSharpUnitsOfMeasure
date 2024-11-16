@@ -315,9 +315,8 @@ let%expect_test "parse let ... in with single variable" =
   pp pp_expression parse_expr {| let a = 5 in a |};
   [%expect
     {|
-    (Expr_let (Nonrecursive,
-       [(Binding ((Pattern_ident "a"), (Expr_const (Const_int 5))))],
-       (Expr_ident_or_op "a"))) |}]
+    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
+       [], (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse let without in expression should fail" =
@@ -330,27 +329,24 @@ let%expect_test "parse let rec ... in expression" =
   pp pp_expression parse_expr {| let rec a = 5 in a |};
   [%expect
     {|
-    (Expr_let (Recursive,
-       [(Binding ((Pattern_ident "a"), (Expr_const (Const_int 5))))],
-       (Expr_ident_or_op "a"))) |}]
+    (Expr_let (Recursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
+       [], (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse let ... in expression with function application" =
   pp pp_expression parse_expr {| let a = 5 in f a |};
   [%expect
     {|
-    (Expr_let (Nonrecursive,
-       [(Binding ((Pattern_ident "a"), (Expr_const (Const_int 5))))],
-       (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))))) |}]
+    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
+       [], (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))))) |}]
 ;;
 
 let%expect_test "parse let ... and ... in expression" =
   pp pp_expression parse_expr {| let a = 5 and b=4 in e |};
   [%expect
     {|
-    (Expr_let (Nonrecursive,
-       [(Binding ((Pattern_ident "a"), (Expr_const (Const_int 5))));
-         (Binding ((Pattern_ident "b"), (Expr_const (Const_int 4))))],
+    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
+       [((Pattern_ident "b"), (Expr_const (Const_int 4)))],
        (Expr_ident_or_op "e"))) |}]
 ;;
 
@@ -358,15 +354,177 @@ let%expect_test "parse nested let .. in expressions " =
   pp pp_expression parse_expr {| let a = 1 in let b = 2 in let c = 3 in e |};
   [%expect
     {|
-    (Expr_let (Nonrecursive,
-       [(Binding ((Pattern_ident "a"), (Expr_const (Const_int 1))))],
+    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 1))),
+       [],
        (Expr_let (Nonrecursive,
-          [(Binding ((Pattern_ident "b"), (Expr_const (Const_int 2))))],
+          ((Pattern_ident "b"), (Expr_const (Const_int 2))), [],
           (Expr_let (Nonrecursive,
-             [(Binding ((Pattern_ident "c"), (Expr_const (Const_int 3))))],
+             ((Pattern_ident "c"), (Expr_const (Const_int 3))), [],
              (Expr_ident_or_op "e")))
           ))
        )) |}]
+;;
+
+(************************** Tuples **************************)
+
+let%expect_test "parse expression tuple with 0 elements should fail" =
+  pp pp_expression parse_expr {| , |};
+  [%expect {| : no more choices |}]
+;;
+
+let%expect_test "parse expression tuple with 1 element should fail" =
+  pp pp_expression parse_expr {| 1, |};
+  [%expect {| : end_of_input |}]
+;;
+
+let%expect_test "parse expression tuple with 2 elements" =
+  pp pp_expression parse_expr {| 1,2 |};
+  [%expect
+    {|
+      (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), [])) |}]
+;;
+
+let%expect_test "parse expression tuple with 3 elements" =
+  pp pp_expression parse_expr {| 1, 2, myname |};
+  [%expect
+    {|
+    (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)),
+       [(Expr_ident_or_op "myname")])) |}]
+;;
+
+let%expect_test "parse expression tuple of tuples" =
+  pp pp_expression parse_expr {| (1, 2), (3, 4) |};
+  [%expect
+    {|
+    (Expr_tuple (
+       (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), [])),
+       (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)), [])),
+       [])) |}]
+;;
+
+let%expect_test "parse expression tuple of lists" =
+  pp pp_expression parse_expr {| ( [1; 2], [3; 4] ) |};
+  [%expect
+    {|
+    (Expr_tuple (
+       (Expr_list [(Expr_const (Const_int 1)); (Expr_const (Const_int 2))]),
+       (Expr_list [(Expr_const (Const_int 3)); (Expr_const (Const_int 4))]),
+       []))  |}]
+;;
+
+(************************** Lists **************************)
+
+let%expect_test "parse expression empty list" =
+  pp pp_expression parse_expr {| [] |};
+  [%expect {| (Expr_list [])  |}]
+;;
+
+let%expect_test "parse expression list of 1 element" =
+  pp pp_expression parse_expr {| [a] |};
+  [%expect {| (Expr_list [(Expr_ident_or_op "a")])  |}]
+;;
+
+let%expect_test "parse expression list of 2 elements" =
+  pp pp_expression parse_expr {| [a; b] |};
+  [%expect {| (Expr_list [(Expr_ident_or_op "a"); (Expr_ident_or_op "b")])  |}]
+;;
+
+let%expect_test "parse expression list of list" =
+  pp pp_expression parse_expr {| [ [ 1; 2; 3] ] |};
+  [%expect
+    {|
+    (Expr_list
+       [(Expr_list
+           [(Expr_const (Const_int 1)); (Expr_const (Const_int 2));
+             (Expr_const (Const_int 3))])
+         ])  |}]
+;;
+
+let%expect_test "parse expression list of tuples without parentheses" =
+  pp pp_expression parse_expr {| [ 1, 2; 3, 4 ] |};
+  [%expect
+    {|
+    (Expr_list
+       [(Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), []));
+         (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)),
+            []))
+         ])  |}]
+;;
+
+(************************** Match expressions **************************)
+
+let%expect_test "parse match with one rule" =
+  pp pp_expression parse_expr {| match x with | P1 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))), []))  |}]
+;;
+
+let%expect_test "parse match with two rules" =
+  pp pp_expression parse_expr {| match x with | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))),
+       [(Rule ((Pattern_ident "P2"), (Expr_ident_or_op "E2")))]))  |}]
+;;
+
+let%expect_test "parse match with rules containing OR pattern as the first" =
+  pp pp_expression parse_expr {| match x with | P1 | P2 | P3 -> E1 | P4 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule (
+          (Pattern_or ((Pattern_or ((Pattern_ident "P1"), (Pattern_ident "P2"))),
+             (Pattern_ident "P3"))),
+          (Expr_ident_or_op "E1"))),
+       [(Rule ((Pattern_ident "P4"), (Expr_ident_or_op "E2")))]))  |}]
+;;
+
+let%expect_test "parse match with rules containing OR pattern as the last" =
+  pp pp_expression parse_expr {| match x with | P1 -> E1 | P2 | P3 | P4 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E1"))),
+       [(Rule (
+           (Pattern_or (
+              (Pattern_or ((Pattern_ident "P2"), (Pattern_ident "P3"))),
+              (Pattern_ident "P4"))),
+           (Expr_ident_or_op "E2")))
+         ]
+       ))  |}]
+;;
+
+let%expect_test "parse match without argument should fail" =
+  pp pp_expression parse_expr {| match with | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    : no more choices  |}]
+;;
+
+(************************** Function expressions **************************)
+
+let%expect_test "parse match with one rule" =
+  pp pp_expression parse_expr {| function | P1 -> E2 |};
+  [%expect
+    {|
+    (Expr_fun ((Pattern_ident "x"),
+       (Expr_match ((Expr_ident_or_op "x"),
+          (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))), []))
+       ))  |}]
+;;
+
+let%expect_test "parse match with two rules" =
+  pp pp_expression parse_expr {| function | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    (Expr_fun ((Pattern_ident "x"),
+       (Expr_match ((Expr_ident_or_op "x"),
+          (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))),
+          [(Rule ((Pattern_ident "P2"), (Expr_ident_or_op "E2")))]))
+       ))  |}]
 ;;
 
 (************************** Parentheses **************************)
