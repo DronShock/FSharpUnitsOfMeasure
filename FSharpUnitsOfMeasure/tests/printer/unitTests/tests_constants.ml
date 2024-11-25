@@ -14,7 +14,7 @@ let%expect_test "parse int as const int" =
 
 let%expect_test "parse int with letters should fail" =
   pp pp_constant parse_const {|123a|};
-  [%expect {| : end_of_input |}]
+  [%expect {| : no more choices |}]
 ;;
 
 let%expect_test "parse char as const char" =
