@@ -37,6 +37,29 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let is_op_char = function
+  | '+' | '-' | '*' | '/' | '<' | '>' | '=' | '|' | '.' -> true
+  | _ -> false
+;;
+
+let is_builtin_op = function
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "<="
+  | "<"
+  | ">="
+  | ">"
+  | "||"
+  | "&&"
+  | "+."
+  | "-."
+  | "*."
+  | "/." -> true
+  | _ -> false
+;;
+
 let is_ident_char = function
   | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '\'' -> true
   | _ -> false
@@ -60,6 +83,19 @@ let parse_ident =
   else return ident
 ;;
 
+let parse_builtin_op =
+  let* op = take_while is_op_char in
+  match op with
+  | op when is_builtin_op op -> return op
+  | _ -> fail "Failed to parse builtin op"
+;;
+
+let parse_ident_or_op =
+  let parse_op = skip_token "(" *> parse_builtin_op <* skip_token ")" in
+  let* ident_or_op = parse_ident <|> parse_op in
+  return ident_or_op
+;;
+
 let parse_char = char '\'' *> any_char <* char '\''
 let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
 let parse_bool = string "true" <|> string "false" >>| Bool.of_string
@@ -69,6 +105,7 @@ let parse_int =
   let* next_char = peek_char in
   match next_char with
   | Some x when Char.equal x '.' -> fail "Cannot parse int, met float"
+  | Some x when is_ident_char x -> fail "Cannot parse int, met ident"
   | _ -> return int
 ;;
 
@@ -83,7 +120,11 @@ let parse_float =
     | "." -> take_while Char.is_digit
     | _ -> return ""
   in
-  let* e = option "" (string "e" <|> string "E") in
+  let* e =
+    if String.equal dot ""
+    then string "e" <|> string "E"
+    else option "" (string "e" <|> string "E")
+  in
   let* exp_sign =
     match e with
     | "e" | "E" -> option "" (string "+" <|> string "-")
@@ -112,7 +153,5 @@ let chainl parse_alpha parse_sep =
 let rec chainr parse_alpha parse_sep =
   parse_alpha
   >>= fun a ->
-  parse_sep
-  >>= (fun f -> chainr (skip_ws *> parse_alpha) parse_sep >>| f a)
-  <|> return a
+  parse_sep >>= (fun f -> chainr (skip_ws *> parse_alpha) parse_sep >>| f a) <|> return a
 ;;
